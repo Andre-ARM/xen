@@ -64,7 +64,7 @@ static inline void gic_set_lr(int lr, struct pending_irq *p,
 
     clear_pristine_bit(p);
 
-    gic_hw_ops->update_lr(lr, p->irq, p->priority,
+    gic_update_lr(lr, p->irq, p->priority,
                           p->desc ? p->desc->irq : INVALID_IRQ, state);
 
     set_bit(GIC_IRQ_GUEST_VISIBLE, &p->status);
@@ -148,7 +148,7 @@ static unsigned int gic_find_unused_lr(struct vcpu *v,
 
         for_each_set_bit(used_lr, lr_mask, nr_lrs)
         {
-            gic_hw_ops->read_lr(used_lr, &lr_val);
+            gic_read_lr(used_lr, &lr_val);
             if ( lr_val.virq == p->irq )
                 return used_lr;
         }
@@ -195,7 +195,7 @@ static void gic_update_one_lr(struct vcpu *v, int i)
     ASSERT(spin_is_locked(&v->arch.vgic.lock));
     ASSERT(!local_irq_is_enabled());
 
-    gic_hw_ops->read_lr(i, &lr_val);
+    gic_read_lr(i, &lr_val);
     irq = lr_val.virq;
     p = irq_to_pending(v, irq);
 
@@ -209,7 +209,7 @@ static void gic_update_one_lr(struct vcpu *v, int i)
     {
         ASSERT(is_lpi(irq));
 
-        gic_hw_ops->clear_lr(i);
+        gic_clear_lr(i);
         clear_bit(i, &this_cpu(lr_mask));
 
         return;
@@ -224,7 +224,7 @@ static void gic_update_one_lr(struct vcpu *v, int i)
             if ( p->desc == NULL )
             {
                 lr_val.pending = true;
-                gic_hw_ops->write_lr(i, &lr_val);
+                gic_write_lr(i, &lr_val);
             }
             else
                 gdprintk(XENLOG_WARNING, "unable to inject hw irq=%d into %pv: already active in LR%d\n",
@@ -243,7 +243,7 @@ static void gic_update_one_lr(struct vcpu *v, int i)
     else
     {
 #ifndef NDEBUG
-        gic_hw_ops->clear_lr(i);
+        gic_clear_lr(i);
 #endif
         clear_bit(i, &this_cpu(lr_mask));
 
@@ -287,7 +287,7 @@ void vgic_sync_from_lrs(struct vcpu *v)
     if ( is_idle_vcpu(v) )
         return;
 
-    gic_hw_ops->update_hcr_status(GICH_HCR_UIE, false);
+    gic_update_hcr_status(GICH_HCR_UIE, false);
 
     spin_lock_irqsave(&v->arch.vgic.lock, flags);
 
@@ -381,7 +381,7 @@ int vgic_vcpu_pending_irq(struct vcpu *v)
 {
     struct pending_irq *p;
     unsigned long flags;
-    const unsigned long apr = gic_hw_ops->read_apr(0);
+    const unsigned long apr = gic_read_apr(0);
     int mask_priority;
     int active_priority;
     int rc = 0;
@@ -389,7 +389,7 @@ int vgic_vcpu_pending_irq(struct vcpu *v)
     /* We rely on reading the VMCR, which is only accessible locally. */
     ASSERT(v == current);
 
-    mask_priority = gic_hw_ops->read_vmcr_priority();
+    mask_priority = gic_read_vmcr_priority();
     active_priority = find_first_bit(&apr, 32);
 
     spin_lock_irqsave(&v->arch.vgic.lock, flags);
@@ -424,7 +424,7 @@ void vgic_sync_to_lrs(void)
     gic_restore_pending_irqs(current);
 
     if ( !list_empty(&current->arch.vgic.lr_pending) && lr_all_full() )
-        gic_hw_ops->update_hcr_status(GICH_HCR_UIE, true);
+        gic_update_hcr_status(GICH_HCR_UIE, true);
 }
 
 void gic_dump_vgic_info(struct vcpu *v)

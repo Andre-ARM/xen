@@ -181,7 +181,7 @@ int gic_remove_irq_from_guest(struct domain *d, unsigned int virq,
 
     /* EOI the IRQ if it has not been done by the guest */
     if ( test_bit(_IRQ_INPROGRESS, &desc->status) )
-        gic_hw_ops->deactivate_irq(desc);
+        gic_deactivate_irq(desc);
     clear_bit(_IRQ_INPROGRESS, &desc->status);
 
     ret = vgic_connect_hw_irq(d, NULL, virq, desc, false);
@@ -336,7 +336,7 @@ void gic_disable_cpu(void)
 {
     ASSERT(!local_irq_is_enabled());
 
-    gic_hw_ops->disable_interface();
+    gic_disable_interface();
 }
 
 static void do_sgi(struct cpu_user_regs *regs, enum gic_sgi sgi)
@@ -346,7 +346,7 @@ static void do_sgi(struct cpu_user_regs *regs, enum gic_sgi sgi)
     perfc_incr(ipis);
 
     /* Lower the priority */
-    gic_hw_ops->eoi_irq(desc);
+    gic_eoi_irq(desc);
 
     /*
      * Ensure any shared data written by the CPU sending
@@ -372,7 +372,7 @@ static void do_sgi(struct cpu_user_regs *regs, enum gic_sgi sgi)
     }
 
     /* Deactivate */
-    gic_hw_ops->deactivate_irq(desc);
+    gic_deactivate_irq(desc);
 }
 
 /* Accept an interrupt from the GIC and dispatch its handler */
@@ -382,7 +382,7 @@ void gic_interrupt(struct cpu_user_regs *regs, int is_fiq)
 
     do  {
         /* Reading IRQ will ACK it */
-        irq = gic_hw_ops->read_irq();
+        irq = gic_read_irq();
 
         if ( likely(irq >= 16 && irq < 1020) )
         {

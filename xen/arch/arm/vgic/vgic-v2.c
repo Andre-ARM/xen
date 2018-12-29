@@ -64,7 +64,7 @@ void vgic_v2_fold_lr_state(struct vcpu *vcpu)
     if ( !used_lrs )    /* No LRs used, so nothing to sync back here. */
         return;
 
-    gic_hw_ops->update_hcr_status(GICH_HCR_UIE, false);
+    gic_update_hcr_status(GICH_HCR_UIE, false);
 
     for ( lr = 0; lr < used_lrs; lr++ )
     {
@@ -73,7 +73,7 @@ void vgic_v2_fold_lr_state(struct vcpu *vcpu)
         struct vgic_irq *irq;
         struct irq_desc *desc = NULL;
 
-        gic_hw_ops->read_lr(lr, &lr_val);
+        gic_read_lr(lr, &lr_val);
 
         /*
          * TODO: Possible optimization to avoid reading LRs:
@@ -86,7 +86,7 @@ void vgic_v2_fold_lr_state(struct vcpu *vcpu)
          * We need some numbers to justify this: chances are that we don't
          * have many LRs in use most of the time, so we might not save much.
          */
-        gic_hw_ops->clear_lr(lr);
+        gic_clear_lr(lr);
 
         intid = lr_val.virq;
         irq = vgic_get_irq(vcpu->domain, vcpu, intid);
@@ -167,7 +167,7 @@ void vgic_v2_fold_lr_state(struct vcpu *vcpu)
         vgic_put_irq(vcpu->domain, irq);
     }
 
-    gic_hw_ops->update_hcr_status(GICH_HCR_EN, false);
+    gic_update_hcr_status(GICH_HCR_EN, false);
     vgic_cpu->used_lrs = 0;
 }
 
@@ -246,13 +246,13 @@ void vgic_v2_populate_lr(struct vcpu *vcpu, struct vgic_irq *irq, int lr)
     /* The GICv2 LR only holds five bits of priority. */
     lr_val.priority = irq->priority >> 3;
 
-    gic_hw_ops->write_lr(lr, &lr_val);
+    gic_write_lr(lr, &lr_val);
 }
 
 void vgic_v2_enable(struct vcpu *vcpu)
 {
     /* Get the show on the road... */
-    gic_hw_ops->update_hcr_status(GICH_HCR_EN, true);
+    gic_update_hcr_status(GICH_HCR_EN, true);
 }
 
 int vgic_v2_map_resources(struct domain *d)

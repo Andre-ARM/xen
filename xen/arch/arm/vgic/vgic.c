@@ -536,7 +536,7 @@ static void vgic_set_underflow(struct vcpu *vcpu)
 {
     ASSERT(vcpu == current);
 
-    gic_hw_ops->update_hcr_status(GICH_HCR_UIE, true);
+    gic_update_hcr_status(GICH_HCR_UIE, true);
 }
 
 /* Requires the ap_list_lock to be held. */
@@ -637,7 +637,7 @@ void vgic_sync_to_lrs(void)
     vgic_flush_lr_state(current);
     spin_unlock(&current->arch.vgic.ap_list_lock);
 
-    gic_hw_ops->update_hcr_status(GICH_HCR_EN, 1);
+    gic_update_hcr_status(GICH_HCR_EN, 1);
 }
 
 /**

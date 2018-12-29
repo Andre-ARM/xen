@@ -391,6 +391,62 @@ struct gic_hw_operations {
 
 extern const struct gic_hw_operations *gic_hw_ops;
 
+static inline unsigned int gic_read_irq(void)
+{
+    return gic_hw_ops->read_irq();
+}
+
+static inline void gic_update_lr(int lr, unsigned int virq, uint8_t priority,
+                          unsigned int hw_irq, unsigned int state)
+{
+    gic_hw_ops->update_lr(lr, virq, priority, hw_irq, state);
+}
+
+static inline void gic_clear_lr(int lr)
+{
+    gic_hw_ops->clear_lr(lr);
+}
+
+static inline void gic_read_lr(int lr_nr, struct gic_lr *lr)
+{
+    gic_hw_ops->read_lr(lr_nr, lr);
+}
+
+static inline void gic_write_lr(int lr_nr, const struct gic_lr *lr)
+{
+    gic_hw_ops->write_lr(lr_nr, lr);
+}
+
+static inline unsigned int gic_read_vmcr_priority(void)
+{
+    return gic_hw_ops->read_vmcr_priority();
+}
+
+static inline unsigned int gic_read_apr(int apr_reg)
+{
+    return gic_hw_ops->read_apr(apr_reg);
+}
+
+static inline void gic_disable_interface(void)
+{
+    gic_hw_ops->disable_interface();
+}
+
+static inline void gic_update_hcr_status(uint32_t flag, bool set)
+{
+    gic_hw_ops->update_hcr_status(flag, set);
+}
+
+static inline void gic_eoi_irq(struct irq_desc *irqd)
+{
+    gic_hw_ops->eoi_irq(irqd);
+}
+
+static inline void gic_deactivate_irq(struct irq_desc *irqd)
+{
+    gic_hw_ops->deactivate_irq(irqd);
+}
+
 static inline unsigned int gic_get_nr_lrs(void)
 {
     return gic_hw_ops->info->nr_lrs;
