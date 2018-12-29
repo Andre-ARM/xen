@@ -220,20 +220,20 @@ static void gicv2_dump_state(const struct vcpu *v)
     }
 }
 
-static void gicv2_eoi_irq(struct irq_desc *irqd)
+void gicv2_eoi_irq(struct irq_desc *irqd)
 {
     int irq = irqd->irq;
     /* Lower the priority */
     writel_gicc(irq, GICC_EOIR);
 }
 
-static void gicv2_dir_irq(struct irq_desc *irqd)
+void gicv2_dir_irq(struct irq_desc *irqd)
 {
     /* Deactivate */
     writel_gicc(irqd->irq, GICC_DIR);
 }
 
-static unsigned int gicv2_read_irq(void)
+unsigned int gicv2_read_irq(void)
 {
     return (readl_gicc(GICC_IAR) & GICC_IA_IRQ);
 }
@@ -482,7 +482,7 @@ static void gicv2_send_SGI(enum gic_sgi sgi, enum gic_sgi_mode irqmode,
 }
 
 /* Shut down the per-CPU GIC interface */
-static void gicv2_disable_interface(void)
+void gicv2_disable_interface(void)
 {
     spin_lock(&gicv2.lock);
     gicv2_cpu_disable();
@@ -490,8 +490,8 @@ static void gicv2_disable_interface(void)
     spin_unlock(&gicv2.lock);
 }
 
-static void gicv2_update_lr(int lr, unsigned int virq, uint8_t priority,
-                            unsigned int hw_irq, unsigned int state)
+void gicv2_update_lr(int lr, unsigned int virq, uint8_t priority,
+		     unsigned int hw_irq, unsigned int state)
 {
     uint32_t lr_reg;
 
@@ -510,12 +510,12 @@ static void gicv2_update_lr(int lr, unsigned int virq, uint8_t priority,
     writel_gich(lr_reg, GICH_LR + lr * 4);
 }
 
-static void gicv2_clear_lr(int lr)
+void gicv2_clear_lr(int lr)
 {
     writel_gich(0, GICH_LR + lr * 4);
 }
 
-static void gicv2_read_lr(int lr, struct gic_lr *lr_reg)
+void gicv2_read_lr(int lr, struct gic_lr *lr_reg)
 {
     uint32_t lrv;
 
@@ -543,7 +543,7 @@ static void gicv2_read_lr(int lr, struct gic_lr *lr_reg)
     }
 }
 
-static void gicv2_write_lr(int lr, const struct gic_lr *lr_reg)
+void gicv2_write_lr(int lr, const struct gic_lr *lr_reg)
 {
     uint32_t lrv = 0;
 
@@ -577,7 +577,7 @@ static void gicv2_write_lr(int lr, const struct gic_lr *lr_reg)
     writel_gich(lrv, GICH_LR + lr * 4);
 }
 
-static void gicv2_hcr_status(uint32_t flag, bool status)
+void gicv2_hcr_status(uint32_t flag, bool status)
 {
     uint32_t hcr = readl_gich(GICH_HCR);
 
@@ -589,13 +589,13 @@ static void gicv2_hcr_status(uint32_t flag, bool status)
     writel_gich(hcr, GICH_HCR);
 }
 
-static unsigned int gicv2_read_vmcr_priority(void)
+unsigned int gicv2_read_vmcr_priority(void)
 {
    return ((readl_gich(GICH_VMCR) >> GICH_V2_VMCR_PRIORITY_SHIFT)
            & GICH_V2_VMCR_PRIORITY_MASK);
 }
 
-static unsigned int gicv2_read_apr(int apr_reg)
+unsigned int gicv2_read_apr(int apr_reg)
 {
    return readl_gich(GICH_APR);
 }
