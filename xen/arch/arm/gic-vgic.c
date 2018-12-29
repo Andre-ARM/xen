@@ -31,12 +31,38 @@
 
 static void gic_update_one_lr(struct vcpu *v, int i);
 
+static void clear_pristine_bit(struct pending_irq *p)
+{
+#ifdef CONFIG_GICV3
+    clear_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status);
+#endif
+}
+
+static bool test_pristine_bit(struct pending_irq *p)
+{
+#ifdef CONFIG_GICV3
+    if ( unlikely(test_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status)) )
+        return true;
+    else
+#endif
+        return false;
+}
+
+static int test_and_clear_pristine_bit(struct pending_irq *p)
+{
+#ifdef CONFIG_GICV3
+    return test_and_clear_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status);
+#else
+    return false;
+#endif
+}
+
 static inline void gic_set_lr(int lr, struct pending_irq *p,
                               unsigned int state)
 {
     ASSERT(!local_irq_is_enabled());
 
-    clear_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status);
+    clear_pristine_bit(p);
 
     gic_hw_ops->update_lr(lr, p->irq, p->priority,
                           p->desc ? p->desc->irq : INVALID_IRQ, state);
@@ -112,13 +138,13 @@ static unsigned int gic_find_unused_lr(struct vcpu *v,
 {
     unsigned int nr_lrs = gic_get_nr_lrs();
     unsigned long *lr_mask = (unsigned long *) &this_cpu(lr_mask);
-    struct gic_lr lr_val;
 
     ASSERT(spin_is_locked(&v->arch.vgic.lock));
 
-    if ( unlikely(test_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status)) )
+    if ( test_pristine_bit(p) )
     {
         unsigned int used_lr;
+        struct gic_lr lr_val;
 
         for_each_set_bit(used_lr, lr_mask, nr_lrs)
         {
@@ -172,14 +198,14 @@ static void gic_update_one_lr(struct vcpu *v, int i)
     gic_hw_ops->read_lr(i, &lr_val);
     irq = lr_val.virq;
     p = irq_to_pending(v, irq);
+
     /*
      * An LPI might have been unmapped, in which case we just clean up here.
      * If that LPI is marked as PRISTINE, the information in the LR is bogus,
      * as it belongs to a previous, already unmapped LPI. So we discard it
      * here as well.
      */
-    if ( unlikely(!p ||
-                  test_and_clear_bit(GIC_IRQ_GUEST_PRISTINE_LPI, &p->status)) )
+    if ( unlikely(!p || test_and_clear_pristine_bit(p)) )
     {
         ASSERT(is_lpi(irq));
 
