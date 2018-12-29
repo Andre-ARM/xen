@@ -391,60 +391,117 @@ struct gic_hw_operations {
 
 extern const struct gic_hw_operations *gic_hw_ops;
 
+unsigned int gicv2_read_irq(void);
+void gicv2_update_lr(int lr, unsigned int virq, uint8_t priority,
+                     unsigned int hw_irq, unsigned int state);
+void gicv2_clear_lr(int lr);
+void gicv2_read_lr(int lr_nr, struct gic_lr *lr);
+void gicv2_write_lr(int lr_nr, const struct gic_lr *lr);
+void gicv2_dir_irq(struct irq_desc *irqd);
+void gicv2_eoi_irq(struct irq_desc *irqd);
+unsigned int gicv2_read_vmcr_priority(void);
+unsigned int gicv2_read_apr(int apr_reg);
+void gicv2_disable_interface(void);
+void gicv2_hcr_status(uint32_t flag, bool set);
+
 static inline unsigned int gic_read_irq(void)
 {
+#ifdef CONFIG_GICV3
     return gic_hw_ops->read_irq();
+#else
+    return gicv2_read_irq();
+#endif
 }
 
 static inline void gic_update_lr(int lr, unsigned int virq, uint8_t priority,
                           unsigned int hw_irq, unsigned int state)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->update_lr(lr, virq, priority, hw_irq, state);
+#else
+    gicv2_update_lr(lr, virq, priority, hw_irq, state);
+#endif
 }
 
 static inline void gic_clear_lr(int lr)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->clear_lr(lr);
+#else
+    gicv2_clear_lr(lr);
+#endif
 }
 
 static inline void gic_read_lr(int lr_nr, struct gic_lr *lr)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->read_lr(lr_nr, lr);
+#else
+    gicv2_read_lr(lr_nr, lr);
+#endif
 }
 
 static inline void gic_write_lr(int lr_nr, const struct gic_lr *lr)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->write_lr(lr_nr, lr);
+#else
+    gicv2_write_lr(lr_nr, lr);
+#endif
 }
 
 static inline unsigned int gic_read_vmcr_priority(void)
 {
+#ifdef CONFIG_GICV3
     return gic_hw_ops->read_vmcr_priority();
+#else
+    return gicv2_read_vmcr_priority();
+#endif
 }
 
 static inline unsigned int gic_read_apr(int apr_reg)
 {
+#ifdef CONFIG_GICV3
     return gic_hw_ops->read_apr(apr_reg);
+#else
+    return gicv2_read_apr(apr_reg);
+#endif
 }
 
 static inline void gic_disable_interface(void)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->disable_interface();
+#else
+    gicv2_disable_interface();
+#endif
 }
 
 static inline void gic_update_hcr_status(uint32_t flag, bool set)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->update_hcr_status(flag, set);
+#else
+    gicv2_hcr_status(flag, set);
+#endif
 }
 
 static inline void gic_eoi_irq(struct irq_desc *irqd)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->eoi_irq(irqd);
+#else
+    gicv2_eoi_irq(irqd);
+#endif
 }
 
 static inline void gic_deactivate_irq(struct irq_desc *irqd)
 {
+#ifdef CONFIG_GICV3
     gic_hw_ops->deactivate_irq(irqd);
+#else
+    gicv2_dir_irq(irqd);
+#endif
 }
 
 static inline unsigned int gic_get_nr_lrs(void)
